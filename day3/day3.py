@@ -93,5 +93,5 @@ def part2(data):
     print(min([sum(v.values()) for v in collisions.values()]))
 
 
-# part1(data)
+part1(data)
 part2(data)
