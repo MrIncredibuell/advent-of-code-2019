@@ -185,17 +185,12 @@ class Computer:
     def outputs(self):
         def gen():
             i = 0
-            # while i < len(self._outputs):
-                # if i == len(self._outputs) and self.running:
-                #     print(f"{self.name} should try to get more outputs")
 
             while True:
                 if i >= len(self._outputs):
                     self.awaiting = True
-                    # raise AwaitingInput(f"{self.name} tried to read output that doesn't exist")
                     yield None
                 else:
-                    # print(f"{self.name} output {self._outputs[i]}")
                     yield self._outputs[i]
                     i += 1
 
