@@ -1,8 +1,8 @@
 from collections import defaultdict
 
-data = [int(x) for x in open("input.txt").read().split(",")]
+data = [int(x) for x in open("input1.txt").read().split(",")]
 class Computer:
-    def __init__(self, data, inputs, index=0, name="Fred"):
+    def __init__(self, data, inputs, index=0, name="Fred", on_output=None):
         self.data = defaultdict(int)
         for (ii, value) in enumerate(data):
             self.data[ii] = value
@@ -13,6 +13,7 @@ class Computer:
         self.name = name
         self.awaiting = False
         self.relative_base = 0
+        self.on_output = on_output
 
     def parse_op(self):
         value = self.data[self.index]
@@ -78,6 +79,8 @@ class Computer:
             self.data[p1] = input_value
         elif op == 4:
             self._outputs.append(p1)
+            if self.on_output is not None:
+                self.on_output(p1)
         elif op == 5:
             if p1 != 0:
                 self.index = p2
@@ -122,15 +125,69 @@ class Computer:
             self.process()
         
 
+
+class Hull():
+    def __init__(self, starting_color=0):
+        self.location = (0, 0)
+        self.direction = 0 # up
+        self.grid = {(0,0): starting_color}
+        self.paint_next = True # True if we expect the next input to be a color
+
+    def __next__(self):
+        color = self.grid.get(self.location)
+        if color is None:
+            color = 0
+        return color
+
+    def handle_input(self, value):
+        if self.paint_next:
+            self.grid[(self.location)] = value
+            self.paint_next = False
+        else:
+            if value == 0:
+                self.direction = (self.direction - 1) % 4
+            else:
+                self.direction = (self.direction + 1) % 4
+
+            (x,y) = self.location
+            if self.direction == 0:
+                self.location = (x, y - 1)
+            elif self.direction == 1:
+                self.location = (x + 1, y)
+            elif self.direction == 2:
+                self.location = (x, y + 1)
+            elif self.direction == 3:
+                self.location = (x - 1, y)
+            else:
+                raise Exception("I'M LOST")
+        
+            self.paint_next = True
+
 def part1(data):
-    c = Computer(data, inputs=(x for x in (1,)))
+    h = Hull()
+    c = Computer(data, inputs=h, on_output=h.handle_input)
     c.run()
-    print(c._outputs)
+    print(len(h.grid))
 
 def part2(data):
-    c = Computer(data, inputs=(x for x in (2,)))
+    h = Hull(starting_color=1)
+    c = Computer(data, inputs=h, on_output=h.handle_input)
     c.run()
-    print(c._outputs)
+    xs, ys = set([]), set([])
+    for (x, y) in h.grid.keys():
+        xs.add(x)
+        ys.add(y)
+    
 
-# part1(data)
+    for y in range(min(ys), max(ys) + 1):
+        row = []
+        for x in range(min(xs), max(xs) + 1):
+            if h.grid.get((x, y)) == 1:
+                row.append("#")
+            else:
+                row.append(" ")
+        print("".join(row))
+
+
+part1(data)
 part2(data)

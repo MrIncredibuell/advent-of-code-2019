@@ -1,8 +1,8 @@
 from collections import defaultdict
 
-data = [int(x) for x in open("input.txt").read().split(",")]
+data = [int(x) for x in open("input1.txt").read().split(",")]
 class Computer:
-    def __init__(self, data, inputs, index=0, name="Fred"):
+    def __init__(self, data, inputs, index=0, name="Fred", on_output=None):
         self.data = defaultdict(int)
         for (ii, value) in enumerate(data):
             self.data[ii] = value
@@ -13,6 +13,7 @@ class Computer:
         self.name = name
         self.awaiting = False
         self.relative_base = 0
+        self.on_output = on_output
 
     def parse_op(self):
         value = self.data[self.index]
@@ -78,6 +79,8 @@ class Computer:
             self.data[p1] = input_value
         elif op == 4:
             self._outputs.append(p1)
+            if self.on_output is not None:
+                self.on_output(p1)
         elif op == 5:
             if p1 != 0:
                 self.index = p2
@@ -122,15 +125,81 @@ class Computer:
             self.process()
         
 
+
+def parse_output(out, screen = None, score = 0):
+    screen = screen or {}
+    score = score
+    for ii in range(len(out) // 3):
+        ii *= 3
+        x = out[ii]
+        y = out[ii + 1]
+        value = out[ii + 2]
+        if x == -1 and y == 0:
+            score = value
+        else:
+            screen[(x, y)] = value
+
+    return screen, score
+
+
 def part1(data):
-    c = Computer(data, inputs=(x for x in (1,)))
+    c = Computer(data,inputs=None)
     c.run()
-    print(c._outputs)
+    out = c._outputs
+    screen, score = parse_output(c._outputs)
+    print(len([v for v in screen.values() if v == 2]))
+
+
+def print_screen(screen, score):
+    xs, ys = set([]), set([])
+    for (x, y) in screen.keys():
+        xs.add(x)
+        ys.add(y)
+    
+
+    for y in range(min(ys), max(ys) + 1):
+        row = []
+        for x in range(min(xs), max(xs) + 1):
+            if screen.get((x, y)) == 1:
+                row.append("#")
+            elif screen.get((x, y)) == 2:
+                row.append("B")
+            elif screen.get((x, y)) == 3:
+                row.append("-")
+            elif screen.get((x, y)) == 4:
+                row.append("O")
+            else:
+                row.append(" ")
+        print("".join(row))
+    print(score)
+
 
 def part2(data):
-    c = Computer(data, inputs=(x for x in (2,)))
-    c.run()
-    print(c._outputs)
+    data = data[:]
+    data[0] = 2
+    c = Computer(data, inputs=(x for x in [None]))
+    screen = {}
+    score = 0
+    while c.running:
+        c.run()
+        
+        out = c._outputs
+        screen, score = parse_output(c._outputs, screen=screen, score=score)
+        c._outputs = []
+        balls = [key for (key, value) in screen.items() if value == 4]
+        ball_x = balls[0][0]
+        pads = [key for (key, value) in screen.items() if value == 3]
+        pad_x = pads[0][0]
 
-# part1(data)
+        inp = 0
+        if pad_x < ball_x:
+            inp = 1
+        elif pad_x > ball_x:
+            inp = -1
+        c.inputs = (x for x in [inp, None])
+
+    print(score)
+
+
+part1(data)
 part2(data)
